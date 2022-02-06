@@ -6,7 +6,7 @@
 #define MAXKEYS 3
 #define NOKEY "@"
 #define NIL -1
-#define PAGESIZE 50
+#define PAGESIZE 34
 
 typedef struct{
 	int qtdInserido;
@@ -22,38 +22,43 @@ typedef struct{
 } ClienteFilme;
 
 typedef struct{
-    char CodCli[3]; 
-	char CodF[3];
-	int offSet_MainFile;
-} Chave;
+    char CodCli[3]; //3
+	char CodF[3]; //3
+	short offSet_MainFile; //2
+} Chave; //8
+
+typedef struct{
+	int teste;
+} TESTE;
 
 typedef struct{
     char CodCli[3];
 	char CodF[3];
 } Busca;
 typedef struct{ 
-    int keycount; //4  
-    Chave key[MAXKEYS];   //30
-    int child[MAXKEYS + 1]; // 16
-} Pagina; //50 + 4  = 54
+    short keycount; //2 
+    Chave key[MAXKEYS];   //30  (8*3) = 24
+    short child[MAXKEYS + 1]; // (2*4) = 8
+} Pagina; //34
 
 void carrega_arquivo(ClienteFilme **vetor_insere, Busca **vetor_busca, Controle *controle);
 void inserir_mainFile(ClienteFilme *vetor_insere, Controle *controle);
 int inserir_indice();
-int inserir_chave(int rrn, Chave chave, FILE *file);
-void lerPagina(int rrn, Pagina *pagina, FILE* file);
-int procurar_chave(Chave chave, Pagina *pagina, int *pos);
+int inserir_chave(short rrn, Chave chave, FILE *file);
+void lerPagina(short rrn, Pagina *pagina, FILE* file);
+int procurar_chave(Chave chave, Pagina *pagina, short *pos);
 int create_tree(Chave chave);
-int create_root(FILE* file, Chave chave, int left, int right);
+int create_root(FILE* file, Chave chave, short left, short right);
 int getpage(FILE *file);
 int getRoot(FILE *file);
-int write_page(int rrn, Pagina *page, FILE *file);
+int write_page(short rrn, Pagina *page, FILE *file);
 
 int main(){
     Controle *controle = (Controle *)malloc(sizeof(Controle));
     ClienteFilme *vetor_insere = (ClienteFilme*)malloc(sizeof(ClienteFilme));
     Busca *vetor_busca = (Busca*)malloc(sizeof(Busca)); 
-
+	Pagina teste;
+	TESTE testando;
     int opcao;
     FILE* file;
     int validade; //se já existe no indice-> validade = 0; 
@@ -66,6 +71,8 @@ int main(){
 		scanf("%d", &opcao);
 		switch (opcao){
 			case 1:
+			
+
 				validade = inserir_indice(vetor_insere, controle);
 				if(validade == 1){
 					inserir_mainFile(vetor_insere, controle);
@@ -75,6 +82,7 @@ int main(){
 				
 				break;
 			case 2:
+				
 				break;
 			case 3:
 				break;
@@ -82,7 +90,7 @@ int main(){
                 carrega_arquivo(&vetor_insere, &vetor_busca, controle);
 				break;
 			case 5:
-               
+
                 file = fopen("controle.bin", "rb+");
 	            fseek(file, 0, SEEK_SET);
                 fwrite(controle, sizeof(Controle), 1, file);
@@ -134,11 +142,11 @@ int inserir_indice(ClienteFilme *vetor_insere, Controle *controle){
 		return 1;
 	}   
 }
-int inserir_chave(int rrn, Chave chave, FILE* file/*, promo_r_child, promo_kil*/){
+int inserir_chave(short rrn, Chave chave, FILE* file/*, promo_r_child, promo_kil*/){
     printf("entrou no  inserir_chave\n");
 	Pagina auxPagina;
 	int encontrou;
-	int pos;
+	short pos;
     if(rrn == NIL){
         //
     }
@@ -148,15 +156,9 @@ int inserir_chave(int rrn, Chave chave, FILE* file/*, promo_r_child, promo_kil*/
 	
 	printf("pos: %d", pos);
 	return 1;
-	//codcliente maior, codfilme menor | codclient menor codf maior
-    //ler a pagina do rrn correspondente
-	//procurar pela chave na pagina -> se já existir, emitir erro
-	//-> se nao existir, retornar posição em que deveria estar
-    //3
-    // [< 2  > , 4]
-    // return_page = insert(Pagina.child[1], Chave) -> recursão
+
 }
-int procurar_chave(Chave chave, Pagina *pagina, int *pos){
+int procurar_chave(Chave chave, Pagina *pagina, short *pos){
 	printf("entrou no procurar_chave\n");
 	int i=0; 
 	char key[6]; // 6 ? ou nao
@@ -182,28 +184,28 @@ int procurar_chave(Chave chave, Pagina *pagina, int *pos){
 	}
 
 }
-void lerPagina(int rrn, Pagina *pagina, FILE* file){
+void lerPagina(short rrn, Pagina *pagina, FILE* file){
 	printf("entrou no ler pagina");
 	int endereco;
-	endereco = rrn * PAGESIZE + 4;
+	endereco = rrn * PAGESIZE + 2;
 	fseek(file, endereco, SEEK_SET);
 	fread(pagina, sizeof(Pagina), 1, file);
 		
 }
 int create_tree(Chave chave){
 	printf("entrou no create_tree");
-	int firstRoot = 0; 
+	short firstRoot = 0; 
 	FILE* file;
 	file = fopen("arvoreb.bin", "wb+");
 	fseek(file, 0, SEEK_SET);
-	fwrite(&firstRoot, sizeof(int), 1, file);
+	fwrite(&firstRoot, sizeof(short), 1, file);
 	return create_root(file, chave, NIL, NIL);
 	fclose(file);
 }
-int create_root(FILE* file, Chave chave, int left, int right){
+int create_root(FILE* file, Chave chave, short left, short right){
 	printf("entrou no  create_root\n");
 	Pagina pagina;
-	int rrn;
+	short rrn;
 	//inicializando a pagina
 	for(int i = 0; i < MAXKEYS; i++){
 		strcpy(pagina.key[i].CodCli,NOKEY);
@@ -215,36 +217,44 @@ int create_root(FILE* file, Chave chave, int left, int right){
 	//fim da inicialização
 	pagina.key[0] = chave;
 	pagina.key[0].offSet_MainFile = chave.offSet_MainFile;
-	printf("\npagina.key[0].offSet_MainFile: %d", pagina.key[0].offSet_MainFile);
+	printf("\n dentro do create Root: pagina.key[0].offSet_MainFile: %d\n", pagina.key[0].offSet_MainFile);
 	pagina.child[0] = left;
 	pagina.child[1] = right;
 	pagina.keycount = 1;
 	
 	rrn = getpage(file);
-	//
+	//getpag
 	//offset = rrn * tamPagina = 0 * 50 + tamHeader
+	printf("rrn: %d", rrn);
 	write_page(rrn,&pagina,file);
 	//escrevendo o rrn do root no header
 	fseek(file, 0, SEEK_SET);
-	fwrite(&rrn, sizeof(int), 1, file);
+	fwrite(&rrn, sizeof(short), 1, file);
 	return rrn;
 }
-int getpage(FILE *file){ //retorna o offset da  ultima pagina
-printf("entrou no getpage");
-	fseek(file, 0, SEEK_END) - 4; //final da pagina - 4 (do header)
 
-	int rrn = ftell(file); 
+int getpage(FILE *file){ //retorna o rrn da  ultima pagina
+printf("entrou no getpage");
+	fseek(file, 0, SEEK_END); 
+
+	short rrn = ftell(file)-2; 
 	if(rrn <= 0){
 		return 0;
 	}
+
 	return rrn/PAGESIZE;  
 	
 
 }
-int write_page(int rrn, Pagina *page, FILE *file){
+int write_page(short rrn, Pagina *page, FILE *file){
+	printf("\nrrn dentro do write page: %d", rrn);
 	printf("entrou no write_page\n");
-	int addr = rrn * PAGESIZE + 4;
-	printf("pagina.key[0].offSet_MainFile: %s", page->key[1].CodCli); 
+	int addr = rrn * PAGESIZE + 2; // 0 * 50 + 2 = 2
+	printf("dentro do write page: pagina.key[0].offSet_MainFile: %d\n", page->key[0].offSet_MainFile); 
+	printf("dentro do write page: pagina.key[0].chaveCli, chaveF: %s , %s\n", page->key[0].CodCli, page->key[0].CodF);
+
+	printf("\n\ndentro do write page: pagina.key[1].offSet_MainFile: %d\n", page->key[1].offSet_MainFile); 
+	printf("\n\ndentro do write page: pagina.key[1].chaveCli, chaveF: %s , %s\n", page->key[1].CodCli, page->key[1].CodF);
 	fseek(file, addr, SEEK_SET);
 	return fwrite(page, sizeof(Pagina), 1, file);
 }
