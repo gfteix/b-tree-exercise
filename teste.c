@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 
 //#define MAXKEYS 3
@@ -24,38 +25,53 @@ typedef struct{
 int main(){
 
 	Chave chave;
-		Pagina pagina;
+	Pagina pagina;
+	pagina.keycount = 3;
 
+	
 	strcpy(chave.CodCli, "01");
 	strcpy(chave.CodF, "01");
-	chave.offSet_MainFile = 4;
 
 	pagina.key[0] = chave;
+	// ------------- pos = 01
+	strcpy(chave.CodCli, "01");
+	strcpy(chave.CodF, "04");
 
-	printf("tamanho pagina: %ld\n", sizeof(pagina));
-	
-	
-/*
-	char codcli1[3] = "01";
-	char codf1[3] = "04";
+	pagina.key[1] = chave;
 
-	char codcli2[3] = "01";
-	char codf2[3] = "01";
+	strcpy(chave.CodCli, "01");
+	strcpy(chave.CodF, "06");
+	pagina.key[2] = chave;
+//*************//
+	Chave key;
+	strcpy(key.CodCli, "01");
+	strcpy(key.CodF, "05");
 
-	strcat(codcli1, codf1);
-	strcat(codcli2, codf2);
-	//0301 - 0103
-	if(strcmp(codcli1, codcli2) > 0){
-		printf("1 e maior");
-	}else if(strcmp(codcli1, codcli2) < 0){
-		printf("2 e maior");
-	}else{
-		printf("igual");
+
+	int i=0; 
+	char pageKey[6] = "";
+	int pos;
+
+	strcat(pageKey, pagina.key[i].CodCli);
+	strcat(pageKey, pagina.key[i].CodF);   
+// 0, 1, 2
+//0101 , 0104, 0106
+//***0102***
+	int keyCodCli, keyCodF, pageCodCli, pageCodF;
+
+	keyCodCli = atoi(key.CodCli);
+	keyCodF = atoi(key.CodF);
+
+	for(i = 0; i < pagina.keycount; i++){ // i = 0 ou i = 1;
+		pageCodCli = atoi(pagina.key[i].CodCli);
+		pageCodF = atoi(pagina.key[i].CodF);
+
+		if(keyCodCli + keyCodF <= pageCodCli + pageCodF){
+			break;
+		}
 	}
-	printf("%s", codcli1);
+	pos = i;
+	printf("pos: %d", pos);
 
-	strcpy(codcli1, " ");
-	printf("\n");
-	printf("a: %s", codcli1);*/
 	return 0;
 }

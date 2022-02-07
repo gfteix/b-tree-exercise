@@ -44,7 +44,7 @@ typedef struct{
 void carrega_arquivo(ClienteFilme **vetor_insere, Busca **vetor_busca, Controle *controle);
 void inserir_mainFile(ClienteFilme *vetor_insere, Controle *controle);
 int inserir_indice();
-int inserir_chave(short rrn, Chave chave, FILE *file);
+int inserir_chave(short rrn, Chave chave, FILE* file, short *promo_r_child, Chave *promo_key);
 void lerPagina(short rrn, Pagina *pagina, FILE* file);
 int procurar_chave(Chave chave, Pagina *pagina, short *pos);
 int create_tree(Chave chave);
@@ -52,6 +52,7 @@ int create_root(FILE* file, Chave chave, short left, short right);
 int getpage(FILE *file);
 int getRoot(FILE *file);
 int write_page(short rrn, Pagina *page, FILE *file);
+void inserir_na_pagina(Chave chave, short r_child, Pagina *p_page);
 
 int main(){
     Controle *controle = (Controle *)malloc(sizeof(Controle));
@@ -62,6 +63,8 @@ int main(){
     int opcao;
     FILE* file;
     int validade; //se já existe no indice-> validade = 0; 
+
+	
     while (opcao != 5){
 		printf("\n1. Insercao");
 		printf("\n2. Listar os dados de todos os clientes");
@@ -119,9 +122,11 @@ int getRoot(FILE *file){
 int inserir_indice(ClienteFilme *vetor_insere, Controle *controle){
 	printf("entrou no  inserir_indice\n");
 	FILE* file;
-    int rrnRoot;
+    __u_short rrnRoot;
 	int promoted;
-	
+	Chave promo_key;
+	short promo_rrn;
+
 	Chave chaveAux;
 	stpcpy(chaveAux.CodCli,vetor_insere[controle->qtdInserido].CodCli);
 	strcpy(chaveAux.CodF, vetor_insere[controle->qtdInserido].CodF);
@@ -135,54 +140,75 @@ int inserir_indice(ClienteFilme *vetor_insere, Controle *controle){
     }else{ //arquivo e árvore já existem
         
         rrnRoot = getRoot(file);
-        promoted = inserir_chave(rrnRoot, chaveAux, file); // provavelmente tem mais parametros
+        promoted = inserir_chave(rrnRoot, chaveAux, file, &promo_rrn, &promo_key); // provavelmente tem mais parametros
 		/*if(prometed){
 			root = create_root(...);
 		}*/
 		return 1;
 	}   
 }
-int inserir_chave(short rrn, Chave chave, FILE* file/*, promo_r_child, promo_kil*/){
+int inserir_chave(short rrn, Chave chave, FILE* file, short *promo_r_child, Chave *promo_key){
     printf("entrou no  inserir_chave\n");
 	Pagina auxPagina;
 	int encontrou;
 	short pos;
+	int promoted;
+	short p_b_rrn;
+	Chave p_b_key;
     if(rrn == NIL){
         //
+		*promo_key = chave;
+		*promo_r_child = NIL;
     }
 	lerPagina(rrn, &auxPagina, file); // fornecemos o rrn de uma pagina e enviamos uma pagina aux para termos em memoria a pagina 
     // testar se o auxPagina está vindo com conteudo do lerPagina()
 	encontrou = procurar_chave(chave, &auxPagina, &pos);
-	
-	printf("pos: %d", pos);
+	if(encontrou){
+		printf("\nErro: Chave duplicada.");
+		return 0;
+	}
+	promoted = inserir_chave(auxPagina.child[pos], chave, file, &p_b_rrn, &p_b_key);
+	if(!promoted){
+		return 0;
+	}
+	if(auxPagina.keycount < MAXKEYS){
+		inserir_na_pagina(p_b_key, p_b_rrn, &auxPagina);
+	}
 	return 1;
 
+}
+void inserir_na_pagina(Chave chave, short r_child, Pagina *p_page){
+	int j;
+	for(j = p_page->keycount;  < p_page->key[j-1] && j > 0; j--){
+		p_page->
+	}
 }
 int procurar_chave(Chave chave, Pagina *pagina, short *pos){
 	printf("entrou no procurar_chave\n");
 	int i=0; 
-	char key[6]; // 6 ? ou nao
-	char pageKey[6];
-	strcat(key, chave.CodCli);
-	strcat(key, chave.CodF);
+	
+	int keyCodCli, keyCodF, pageCodCli, pageCodF;
 
-	strcat(pageKey, pagina->key[i].CodCli);
-	strcat(pageKey, pagina->key[i].CodF);
-	
-	for(i = 1; i < pagina->keycount && strcmp(key, pageKey) > 0; i++){ // i = 0 ou i = 1;
-		strcpy(pageKey, " ");
-		strcat(pageKey, pagina->key[i].CodCli);
-		strcat(pageKey, pagina->key[i].CodF);
+	keyCodCli = atoi(chave.CodCli);
+	keyCodF = atoi(chave.CodF);
+
+	for(i = 0; i < pagina->keycount; i++){ // i = 0 ou i = 1;
+		pageCodCli = atoi(pagina->key[i].CodCli);
+		pageCodF = atoi(pagina->key[i].CodF);
+
+		if(keyCodCli + keyCodF <= pageCodCli + pageCodF){
+			break;
+		}
 	}
-	
 	*pos = i;
-													//1010
-	if (*pos < pagina->keycount && strcmp(key, strcat(pagina->key[i].CodCli, pagina->key[i].CodF)) == 0 ){
-		return 1;
+	( strcmp(chave.CodCli, pagina->key[*pos].CodCli) == 0
+	&& strcmp(chave.CodF, pagina->key[*pos].CodF) == 0 )                                                             )
+	if (*pos < pagina->keycount && (strcmp(chave.CodCli, pagina->key[*pos].CodCli) == 0
+	&& strcmp(chave.CodF, pagina->key[*pos].CodF) == 0 )){
+		return 1; // key esta na pagina
 	}else{
-		return 0;
+		return 0; // key nao esta na pagina
 	}
-
 }
 void lerPagina(short rrn, Pagina *pagina, FILE* file){
 	printf("entrou no ler pagina");
