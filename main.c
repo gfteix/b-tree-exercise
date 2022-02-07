@@ -144,6 +144,7 @@ int inserir_indice(ClienteFilme *vetor_insere, Controle *controle){
 		/*if(prometed){
 			root = create_root(...);
 		}*/
+		
 		return 1;
 	}   
 }
@@ -168,20 +169,39 @@ int inserir_chave(short rrn, Chave chave, FILE* file, short *promo_r_child, Chav
 		return 0;
 	}
 	promoted = inserir_chave(auxPagina.child[pos], chave, file, &p_b_rrn, &p_b_key);
+	printf("\n%d", promoted);
 	if(!promoted){
 		return 0;
 	}
 	if(auxPagina.keycount < MAXKEYS){
 		inserir_na_pagina(p_b_key, p_b_rrn, &auxPagina);
+		write_page(rrn, &auxPagina, file);
+		printf("AAAAAAAA");
+		return 0;
+		
+	}else{
+		printf("vai ter que splitar");
 	}
 	return 1;
 
 }
 void inserir_na_pagina(Chave chave, short r_child, Pagina *p_page){
 	int j;
-	for(j = p_page->keycount;  < p_page->key[j-1] && j > 0; j--){
-		p_page->
+	int keyCodCli, keyCodF, pageCodCli, pageCodF;
+
+	keyCodCli = atoi(chave.CodCli);
+	keyCodF = atoi(chave.CodF);
+	
+	for(j = p_page->keycount; ((keyCodCli + keyCodF) < (atoi(p_page->key[j-1].CodCli) + atoi(p_page->key[j-1].CodF)) && j > 0); j--){
+		strcpy(p_page->key[j].CodCli, p_page->key[j-1].CodCli);
+		strcpy(p_page->key[j].CodF, p_page->key[j-1].CodF);
+
+		p_page->child[j+1] =  p_page->child[j];
 	}
+	p_page->keycount++;
+	p_page->key[j] = chave;
+	p_page->child[j+1] = r_child;
+	
 }
 int procurar_chave(Chave chave, Pagina *pagina, short *pos){
 	printf("entrou no procurar_chave\n");
@@ -199,10 +219,13 @@ int procurar_chave(Chave chave, Pagina *pagina, short *pos){
 		if(keyCodCli + keyCodF <= pageCodCli + pageCodF){
 			break;
 		}
+
+		
+		
 	}
 	*pos = i;
-	( strcmp(chave.CodCli, pagina->key[*pos].CodCli) == 0
-	&& strcmp(chave.CodF, pagina->key[*pos].CodF) == 0 )                                                             )
+	
+	                                                             
 	if (*pos < pagina->keycount && (strcmp(chave.CodCli, pagina->key[*pos].CodCli) == 0
 	&& strcmp(chave.CodF, pagina->key[*pos].CodF) == 0 )){
 		return 1; // key esta na pagina
