@@ -1,7 +1,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+/*
+TAREFAS:
+- Arrumar offsets na árvore b
 
+*/
 
 #define MAXKEYS 3
 #define MINKEYS MAXKEYS/2
@@ -82,18 +86,18 @@ int main(){
 		scanf("%d", &opcao);
 		switch (opcao){
 			case 1:
-			
-
+				printf("\n%s %s", vetor_insere[controle->qtdInserido].CodCli, vetor_insere[controle->qtdInserido].CodF);
 				validade = inserir_indice(vetor_insere, controle);
 				if(validade == 1){
 					inserir_mainFile(vetor_insere, controle);
+					printf("\nChave %s %s inserida com sucesso", vetor_insere[controle->qtdInserido-1].CodCli, vetor_insere[controle->qtdInserido-1].CodF);
 				}else{
-					printf("A chave a ser inserida já existe no indice\n");
+					printf("\nChave %s %s duplicada", vetor_insere[controle->qtdInserido].CodCli, vetor_insere[controle->qtdInserido].CodF);
 				}
 				
 				break;
 			case 2:
-				printf("offset chave 3 no main file: %d", teste);
+			
 				break;
 			case 3:
 				break;
@@ -117,18 +121,16 @@ int main(){
 }
 
 int getRoot(FILE *file){
-	printf("entrou no  getRoot\n");
     int rrnRoot;
     fseek(file, 0, SEEK_SET);
     if(fread(&rrnRoot, sizeof(int), 1, file)==0){
-        printf("ERRO: nao foi possivel encontrar a raiz\n");
+        printf("\nERRO: nao foi possivel encontrar a raiz\n");
         return -1;
     }
     return rrnRoot;
 }
 //definir um melhor retorno
 int inserir_indice(ClienteFilme *vetor_insere, Controle *controle){
-	printf("entrou no  inserir_indice\n");
 	FILE* file;
     short rrnRoot;
 	int promoted;
@@ -141,27 +143,33 @@ int inserir_indice(ClienteFilme *vetor_insere, Controle *controle){
 	chaveAux.offSet_MainFile = controle->qtdInserido * 160;
 	
 	if((file = fopen("arvoreb.bin", "rb+")) == NULL){ //se o arquivo ainda nao existe
-	printf("ENTREI NO IF");
-		//fclose(file);
 		create_tree(chaveAux);
 		return 1;
     }else{ //arquivo e árvore já existem
         rrnRoot = getRoot(file);
+		if(promoted == -1){
+			return 0;
+		}
         promoted = inserir_chave(rrnRoot, chaveAux, file, &promo_rrn, &promo_key); // provavelmente tem mais parametros
-		if(promoted){
+		if(promoted == -1){
+			return 0;
+		}
+		else if(promoted){
 			rrnRoot = create_root(file, promo_key, rrnRoot, promo_rrn);
 		}
+		fclose(file);
 		return 1;
 	}   
 }
 int inserir_chave(short rrn, Chave chave, FILE* file, short *promo_r_child, Chave *promo_key){
-    printf("entrou no  inserir_chave\n");
 	Pagina auxPagina, novaPagina;
 	int encontrou;
 	short pos;
 	int promoted;
 	short p_b_rrn;
 	Chave p_b_key;
+
+	
     if(rrn == NIL){
         //
 		*promo_key = chave;
@@ -169,15 +177,15 @@ int inserir_chave(short rrn, Chave chave, FILE* file, short *promo_r_child, Chav
 		return 1;
     }
 	lerPagina(rrn, &auxPagina, file); // fornecemos o rrn de uma pagina e enviamos uma pagina aux para termos em memoria a pagina 
-    // testar se o auxPagina está vindo com conteudo do lerPagina()
 	encontrou = procurar_chave(chave, &auxPagina, &pos);
-	if(encontrou){
-		printf("\nErro: Chave duplicada.");
-		return 0;
+	if(encontrou == 1){
+		return -1;
 	}
 	promoted = inserir_chave(auxPagina.child[pos], chave, file, &p_b_rrn, &p_b_key);
 	// nao passa daqui
-	printf("\n%d", promoted);
+	if(promoted == -1){
+		return -1;
+	}
 	if(!promoted){
 		return 0;
 	}
@@ -187,7 +195,6 @@ int inserir_chave(short rrn, Chave chave, FILE* file, short *promo_r_child, Chav
 		return 0;
 		
 	}else{
-		printf("vai ter que splitar");
 		split(p_b_key, p_b_rrn, &auxPagina, promo_key, promo_r_child, &novaPagina, file);
 		write_page(rrn, &auxPagina, file);
 		write_page(*promo_r_child, &novaPagina, file);
@@ -207,15 +214,20 @@ void inserir_na_pagina(Chave chave, short r_child, Pagina *p_page){
 		strcpy(p_page->key[j].CodCli, p_page->key[j-1].CodCli);
 		strcpy(p_page->key[j].CodF, p_page->key[j-1].CodF);
 
+		p_page->key[j].offSet_MainFile = p_page->key[j-1].offSet_MainFile;
+		
 		p_page->child[j+1] =  p_page->child[j];
 	}
+
 	p_page->keycount++;
-	p_page->key[j] = chave;
+	//p_page->key[j] = chave;
+	strcpy(p_page->key[j].CodCli, chave.CodCli);
+	strcpy(p_page->key[j].CodF, chave.CodF);
+	p_page->key[j].offSet_MainFile = chave.offSet_MainFile;
 	p_page->child[j+1] = r_child;
 	
 }
 int procurar_chave(Chave chave, Pagina *pagina, short *pos){
-	printf("entrou no procurar_chave\n");
 	int i=0; 
 	
 	int keyCodCli, keyCodF, pageCodCli, pageCodF;
@@ -242,7 +254,6 @@ int procurar_chave(Chave chave, Pagina *pagina, short *pos){
 	}
 }
 void lerPagina(short rrn, Pagina *pagina, FILE* file){
-	printf("entrou no ler pagina");
 	int endereco;
 	endereco = rrn * PAGESIZE + 2;
 	fseek(file, endereco, SEEK_SET);
@@ -250,7 +261,6 @@ void lerPagina(short rrn, Pagina *pagina, FILE* file){
 		
 }
 int create_tree(Chave chave){
-	printf("entrou no create_tree");
 	short firstRoot = 0; 
 	FILE* file;
 	file = fopen("arvoreb.bin", "wb+");
@@ -260,7 +270,6 @@ int create_tree(Chave chave){
 	fclose(file);
 }
 int create_root(FILE* file, Chave chave, short left, short right){
-	printf("entrou no  create_root\n");
 	Pagina pagina;
 	short rrn;
 	//inicializando a pagina
@@ -280,9 +289,7 @@ int create_root(FILE* file, Chave chave, short left, short right){
 	pagina.keycount = 1;
 	
 	rrn = getpage(file);
-	//getpag
 	//offset = rrn * tamPagina = 0 * 50 + tamHeader
-	printf("rrn: %d", rrn);
 	write_page(rrn,&pagina,file);
 	//escrevendo o rrn do root no header
 	fseek(file, 0, SEEK_SET);
@@ -290,8 +297,9 @@ int create_root(FILE* file, Chave chave, short left, short right){
 	return rrn;
 }
 
-int getpage(FILE *file){ //retorna o rrn da  ultima pagina
-printf("entrou no getpage");
+
+int getpage(FILE *file)
+{ //retorna o rrn da  ultima pagina
 	fseek(file, 0, SEEK_END); 
 
 	short rrn = ftell(file) - 2; 
@@ -303,6 +311,7 @@ printf("entrou no getpage");
 	
 
 }
+
 int write_page(short rrn, Pagina *page, FILE *file){
 	int addr = rrn * PAGESIZE + 2; // 0 * 50 + 2 = 2
 	fseek(file, addr, SEEK_SET);
@@ -323,7 +332,7 @@ void inserir_mainFile(ClienteFilme *vetor_insere, Controle *controle){
             
 	if ((mainFile = fopen("mainfile.bin", "rb+")) == NULL)
 	{
-		printf("Nao foi possivel encontrar o arquivo de controle =(\nVamos criar um...!\n");
+		printf("\nNao foi possivel encontrar o arquivo de controle =(\nVamos criar um...!\n");
 		mainFile = fopen("mainfile.bin", "wb+");
 	}
 
@@ -396,6 +405,7 @@ void split(Chave chave,short r_child, Pagina *p_antiga, Chave *promo_key, short 
 	for (j = 0; j < MAXKEYS; j++){   // passando pela pagina para salvar na pagina temporaria work
 		strcpy(workkeys[j].CodCli, p_antiga->key[j].CodCli);
 		strcpy(workkeys[j].CodF , p_antiga->key[j].CodF);
+		workkeys[j].offSet_MainFile = p_antiga->key[j].offSet_MainFile;
 		workchil[j] = p_antiga->child[j];
 	}
 	
@@ -407,9 +417,7 @@ void split(Chave chave,short r_child, Pagina *p_antiga, Chave *promo_key, short 
 	}
 	workkeys[j] = chave;
 	workchil[j+1] = r_child;
-	//2 3 4 5
 
-	
 	*promo_r_child = getpage(file);
 	pageinit(novaPagina);
 
@@ -431,14 +439,12 @@ void split(Chave chave,short r_child, Pagina *p_antiga, Chave *promo_key, short 
 	p_antiga->child[2] = NIL;	
 	p_antiga->child[3] = NIL;
 	
-	
 	for(j = 0; j < MAXKEYS; j++){
 		 //j=2  === > novapagina key [2] = [1+1+2] = [4]
 		strcpy(novaPagina->key[j].CodCli, workkeys[mid+1+j].CodCli);  
 		strcpy(novaPagina->key[j].CodF, workkeys[mid+1+j].CodF); 
 		novaPagina->child[j] = workchil[mid+1+j];
 		novaPagina->key[j].offSet_MainFile = workkeys[mid+1+j].offSet_MainFile;
-
 	}
 	strcpy(novaPagina->key[2].CodCli, NOKEY);  
 	strcpy(novaPagina->key[2].CodF, NOKEY); 
@@ -449,23 +455,8 @@ void split(Chave chave,short r_child, Pagina *p_antiga, Chave *promo_key, short 
 	promo_key->offSet_MainFile = workkeys[mid].offSet_MainFile;
 	p_antiga->keycount = 1;
 	novaPagina->keycount = 2;
-	
-	
-	
-	/*for (j = 0; j < MINKEYS; j++){
-		p_antiga->key[j] = workkeys[j];
-		p_antiga->child[j] = workchil[j];
-		novaPagina->key[j] = workkeys[j+1+MINKEYS];
-		novaPagina->child[j] = workchil[j+1+MINKEYS];
-		p_antiga->key[j+MINKEYS] = NOKEY;
-		p_antiga->child[j+1+MINKEYS] = NIL;
-	}
-	p_antiga->child[MINKEYS] = workchil[MINKEYS];
-	novaPagina->child[MINKEYS] = workchil[j+1+MINKEYS];
-	novaPagina->keycount = MAXKEYS - MINKEYS;
-	p_antiga->keycount = MINKEYS;
-	*promo_key = workkeys[MINKEYS];*/
-
+	printf("\nDivisao de no");
+	printf("\nChave %s %s promovida", promo_key->CodCli, promo_key->CodF);
 }
 
 void pageinit(Pagina *p_page)
