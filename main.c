@@ -69,7 +69,7 @@ int main(){
     Busca *vetor_busca = (Busca*)malloc(sizeof(Busca)); 
 	TESTE testando;
     int opcao;
-    FILE* file;
+    FILE* controleFile;
     int validade; 
 	short teste;
 	
@@ -78,7 +78,7 @@ int main(){
     while (opcao != 5){
 		printf("\n1. Insercao");
 		printf("\n2. Listar os dados de todos os clientes");
-		printf("\n3. Listar os dados de um cliente específico");
+		printf("\n3. Listar os dados de um cliente especifico");
 		printf("\n4. Carrega Arquivos");
 		printf("\n5. Sair\n");
 		scanf("%d", &opcao);
@@ -103,10 +103,10 @@ int main(){
                 carrega_arquivo(&vetor_insere, &vetor_busca, controle);
 				break;
 			case 5:
-                file = fopen("controle.bin", "rb+");
-	            fseek(file, 0, SEEK_SET);
-                fwrite(controle, sizeof(Controle), 1, file);
-				fclose(file);
+                controleFile = fopen("controle.bin", "rb+");
+	            fseek(controleFile, 0, SEEK_SET);
+                fwrite(controle, sizeof(Controle), 1, controleFile);
+				fclose(controleFile);
         
                 break;
 		}
@@ -470,21 +470,29 @@ int buscaChave(short rrn, Chave chaveProcurada, FILE *treeFile, short *keyOffSet
 	short pos;
 	int foundKey;
 
-	if(rrn == NIL || *keyOffSetMainFile != NIL){
+	if(rrn != NIL && *keyOffSetMainFile != NIL){
 		return 1;
+	}
+
+	if(rrn == NIL){
+		return 0;
 	}
 
 	lerPagina(rrn, &auxPagina, treeFile);
 	foundKey = procurar_chave(chaveProcurada, &auxPagina, &pos);
-	printf("\nfoundkey depois de procurar chave na pagina: %d", foundKey);
 	if(foundKey == 1){
 		*keyOffSetMainFile = auxPagina.key[pos].offSet_MainFile;
-		printf("\noffset na recursao: %d", *keyOffSetMainFile);
+		printf("chave encontrada: %s %s", auxPagina.key[pos].CodCli, auxPagina.key[pos].CodF);
 		return 1;
 	}else{   /// foundkey retornar 0 do procurar chave
-		foundKey = buscaChave(auxPagina.child[pos], chaveProcurada, treeFile, &foundKey);
-		return *keyOffSetMainFile;
+		foundKey = buscaChave(auxPagina.child[pos], chaveProcurada, treeFile, &*keyOffSetMainFile);
+		if(foundKey == 1){
+			return 1;
+		}else{
+			return 0;
+		}
 	}
+
 
 	
 
@@ -498,22 +506,22 @@ void lista_cliente_especifico(Busca *vetor_busca, Controle *controle){
 	FILE *mainFile;
 	int foundKey = 0;
 
-	if(treeFile = fopen("arvoreb.bin", "rb+") == NULL){
-		printf("\nNão foi possível abrir o arquivo da arvoreB");
-		return;
-	}
+	treeFile = fopen("arvoreb.bin", "rb+");
+		
 
 	strcpy(chaveProcurada.CodCli, vetor_busca[controle->qtdBuscado].CodCli);
 	strcpy(chaveProcurada.CodF, vetor_busca[controle->qtdBuscado].CodF);
+	printf("chave a ser buscada: %s %s", chaveProcurada.CodCli, chaveProcurada.CodF);
 	rrnRoot = getRoot(treeFile);
-	printf("rrn da root: %d", rrnRoot);
+
 	foundKey = buscaChave(rrnRoot, chaveProcurada, treeFile, &keyOffSetMainFile);
 	if(foundKey == 1){
 		printf("\nChave Encontrada!");
-		printf("\nTestando depois das recursoes : OffSet da chave no mainFile %d", keyOffSetMainFile);
+		printf("\nOffSet da chave no mainFile %d", keyOffSetMainFile);
+		controle->qtdBuscado++;
 	}else{
-		printf("\nChave não encontrada!");
-	}								
-	
+		printf("\nChave nao encontrada!");
+	}							
+
 }
 
