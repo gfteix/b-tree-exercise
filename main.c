@@ -40,11 +40,18 @@ typedef struct{
     char CodCli[3];
 	char CodF[3];
 } Busca;
+
 typedef struct{ 
     short keycount; //2 
     Chave key[MAXKEYS];   //30  (8*3) = 24
     short child[MAXKEYS + 1]; // (2*4) = 8
 } Pagina; //34
+
+typedef struct{
+	short offSet;
+	short posicao;
+	short pagina;
+} BuscaInfo;
 
 void carrega_arquivo(ClienteFilme **vetor_insere, Busca **vetor_busca, Controle *controle);
 void inserir_mainFile(ClienteFilme *vetor_insere, Controle *controle);
@@ -61,7 +68,7 @@ void inserir_na_pagina(Chave chave, short r_child, Pagina *p_page);
 void split(Chave chave,short r_child, Pagina *p_antiga, Chave *promo_key, short *promo_r_child,Pagina *novaPagina, FILE* file);
 void pageinit(Pagina *p_page);
 void lista_cliente_especifico(Busca *vetor_busca, Controle *controle);
-int buscaChave(short rrn, Chave chaveProcurada, FILE *treeFile, short *keyoffSetMainFile);
+int buscaChave(short rrn, Chave chaveProcurada, FILE *treeFile, BuscaInfo *infoChaveEncontrada);
 
 int main(){
     Controle *controle = (Controle *)malloc(sizeof(Controle));
@@ -465,12 +472,12 @@ void pageinit(Pagina *p_page)
 
 }
 
-int buscaChave(short rrn, Chave chaveProcurada, FILE *treeFile, short *keyOffSetMainFile){
+int buscaChave(short rrn, Chave chaveProcurada, FILE *treeFile, BuscaInfo *infoChaveEncontrada){
 	Pagina auxPagina;
 	short pos;
 	int foundKey;
 
-	if(rrn != NIL && *keyOffSetMainFile != NIL){
+	if(rrn != NIL && infoChaveEncontrada->offSet != NIL){
 		return 1;
 	}
 
@@ -481,11 +488,12 @@ int buscaChave(short rrn, Chave chaveProcurada, FILE *treeFile, short *keyOffSet
 	lerPagina(rrn, &auxPagina, treeFile);
 	foundKey = procurar_chave(chaveProcurada, &auxPagina, &pos);
 	if(foundKey == 1){
-		*keyOffSetMainFile = auxPagina.key[pos].offSet_MainFile;
-		printf("chave encontrada: %s %s", auxPagina.key[pos].CodCli, auxPagina.key[pos].CodF);
+		infoChaveEncontrada->offSet = auxPagina.key[pos].offSet_MainFile;
+		infoChaveEncontrada->pagina = rrn;
+		infoChaveEncontrada->posicao = pos;
 		return 1;
 	}else{   /// foundkey retornar 0 do procurar chave
-		foundKey = buscaChave(auxPagina.child[pos], chaveProcurada, treeFile, &*keyOffSetMainFile);
+		foundKey = buscaChave(auxPagina.child[pos], chaveProcurada, treeFile, &*infoChaveEncontrada);
 		if(foundKey == 1){
 			return 1;
 		}else{
@@ -505,22 +513,28 @@ void lista_cliente_especifico(Busca *vetor_busca, Controle *controle){
 	FILE *treeFile;
 	FILE *mainFile;
 	int foundKey = 0;
+	BuscaInfo infoChaveEncontrada;
+	ClienteFilme clienteEncontrado;
+	infoChaveEncontrada.offSet = -1;
 
 	treeFile = fopen("arvoreb.bin", "rb+");
-		
-
+	mainFile = fopen("mainfile.bin", "rb+");
+	
 	strcpy(chaveProcurada.CodCli, vetor_busca[controle->qtdBuscado].CodCli);
 	strcpy(chaveProcurada.CodF, vetor_busca[controle->qtdBuscado].CodF);
-	printf("chave a ser buscada: %s %s", chaveProcurada.CodCli, chaveProcurada.CodF);
 	rrnRoot = getRoot(treeFile);
 
-	foundKey = buscaChave(rrnRoot, chaveProcurada, treeFile, &keyOffSetMainFile);
+	foundKey = buscaChave(rrnRoot, chaveProcurada, treeFile, &infoChaveEncontrada);
 	if(foundKey == 1){
-		printf("\nChave Encontrada!");
-		printf("\nOffSet da chave no mainFile %d", keyOffSetMainFile);
+		printf("\nChave %s %s encontrada, pagina %d, posicao %d", chaveProcurada.CodCli, 
+		chaveProcurada.CodF, infoChaveEncontrada.pagina, infoChaveEncontrada.posicao);
+		fseek(mainFile, infoChaveEncontrada.offSet, SEEK_SET);
+		fread(&clienteEncontrado, sizeof(ClienteFilme), 1, mainFile);
+		printf("\nRegistro: %s", clienteEncontrado.CodCli);
 		controle->qtdBuscado++;
 	}else{
-		printf("\nChave nao encontrada!");
+		printf("\nChave %s %s nao encontrada!", chaveProcurada.CodCli, chaveProcurada.CodF);
+		controle->qtdBuscado++;
 	}							
 
 }
