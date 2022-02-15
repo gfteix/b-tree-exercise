@@ -24,7 +24,7 @@ typedef struct{
 	char NomeCli[50];
 	char NomeF[50];
 	char Genero[50];
-} ClienteFilme;
+} ClienteFilme; //
 
 typedef struct{
     char CodCli[3]; //3
@@ -40,47 +40,54 @@ typedef struct{
     char CodCli[3];
 	char CodF[3];
 } Busca;
+
 typedef struct{ 
     short keycount; //2 
     Chave key[MAXKEYS];   //30  (8*3) = 24
     short child[MAXKEYS + 1]; // (2*4) = 8
 } Pagina; //34
 
+typedef struct{
+	short offSet;
+	short posicao;
+	short pagina;
+} BuscaInfo;
+
 void carrega_arquivo(ClienteFilme **vetor_insere, Busca **vetor_busca, Controle *controle);
 void inserir_mainFile(ClienteFilme *vetor_insere, Controle *controle);
-int inserir_indice();
+int inserir_indice(ClienteFilme *vetor_insere, Controle *controle);
 int inserir_chave(short rrn, Chave chave, FILE* file, short *promo_r_child, Chave *promo_key);
 void lerPagina(short rrn, Pagina *pagina, FILE* file);
 int procurar_chave(Chave chave, Pagina *pagina, short *pos);
-int create_tree(Chave chave);
-int create_root(FILE* file, Chave chave, short left, short right);
-int getpage(FILE *file);
-int getRoot(FILE *file);
-int write_page(short rrn, Pagina *page, FILE *file);
+void create_tree(Chave chave);
+short create_root(FILE* file, Chave chave, short left, short right);
+short getpage(FILE *file);
+short getRoot(FILE *file);
+void write_page(short rrn, Pagina *page, FILE *file);
 void inserir_na_pagina(Chave chave, short r_child, Pagina *p_page);
 void split(Chave chave,short r_child, Pagina *p_antiga, Chave *promo_key, short *promo_r_child,Pagina *novaPagina, FILE* file);
 void pageinit(Pagina *p_page);
+void lista_cliente_especifico(Busca *vetor_busca, Controle *controle);
+int buscaChave(short rrn, Chave chaveProcurada, FILE *treeFile, BuscaInfo *infoChaveEncontrada);
+void print_registro(int offset);
+int qtd_filhos(Pagina *pagina);
+void listar_dados_clientes(Pagina *pagina, FILE* file);
 
 int main(){
     Controle *controle = (Controle *)malloc(sizeof(Controle));
     ClienteFilme *vetor_insere = (ClienteFilme*)malloc(sizeof(ClienteFilme));
     Busca *vetor_busca = (Busca*)malloc(sizeof(Busca)); 
-	TESTE testando;
     int opcao;
-    FILE* file;
-    int validade; //se já existe no indice-> validade = 0; 
-	short teste;
-	
-	/*file = fopen("arvoreb.bin", "rb+");
-	fseek(file, 26, SEEK_SET);
-	fread(&teste, sizeof(short),1, file);
-	offset printando certo
-	*/
+    FILE* controleFile;
+    int validade; 
+	short rrnRaiz;	
+	FILE* arvorebFile;
+	Pagina* pagina;
 	
     while (opcao != 5){
 		printf("\n1. Insercao");
 		printf("\n2. Listar os dados de todos os clientes");
-		printf("\n3. Listar os dados de um cliente específico");
+		printf("\n3. Listar os dados de um cliente especifico");
 		printf("\n4. Carrega Arquivos");
 		printf("\n5. Sair\n");
 		scanf("%d", &opcao);
@@ -92,23 +99,29 @@ int main(){
 					inserir_mainFile(vetor_insere, controle);
 					printf("\nChave %s %s inserida com sucesso", vetor_insere[controle->qtdInserido-1].CodCli, vetor_insere[controle->qtdInserido-1].CodF);
 				}else{
+					controle->qtdInserido++;
 					printf("\nChave %s %s duplicada", vetor_insere[controle->qtdInserido].CodCli, vetor_insere[controle->qtdInserido].CodF);
 				}
 				
 				break;
 			case 2:
+				arvorebFile = fopen("arvoreb.bin", "rb+");
+				rrnRaiz = getRoot(arvorebFile);
+				lerPagina(rrnRaiz, pagina, arvorebFile);
+				listar_dados_clientes(pagina, arvorebFile);
+				fclose(arvorebFile);
 				break;
 			case 3:
+				lista_cliente_especifico(vetor_busca, controle);
 				break;
 			case 4:
                 carrega_arquivo(&vetor_insere, &vetor_busca, controle);
 				break;
 			case 5:
-
-                file = fopen("controle.bin", "rb+");
-	            fseek(file, 0, SEEK_SET);
-                fwrite(controle, sizeof(Controle), 1, file);
-				fclose(file);
+                controleFile = fopen("controle.bin", "rb+");
+	            fseek(controleFile, 0, SEEK_SET);
+                fwrite(controle, sizeof(Controle), 1, controleFile);
+				fclose(controleFile);
         
                 break;
 		}
@@ -119,16 +132,13 @@ int main(){
     return 0;
 }
 
-int getRoot(FILE *file){
-    int rrnRoot;
+short getRoot(FILE *file){
+    short rrnRoot;
     fseek(file, 0, SEEK_SET);
-    if(fread(&rrnRoot, sizeof(int), 1, file)==0){
-        printf("\nERRO: nao foi possivel encontrar a raiz\n");
-        return -1;
-    }
+    fread(&rrnRoot, sizeof(short), 1, file);
     return rrnRoot;
 }
-//definir um melhor retorno
+
 int inserir_indice(ClienteFilme *vetor_insere, Controle *controle){
 	FILE* file;
     short rrnRoot;
@@ -158,8 +168,10 @@ int inserir_indice(ClienteFilme *vetor_insere, Controle *controle){
 		}
 		fclose(file);
 		return 1;
-	}   
+	} 
+	  
 }
+
 int inserir_chave(short rrn, Chave chave, FILE* file, short *promo_r_child, Chave *promo_key){
 	Pagina auxPagina, novaPagina;
 	int encontrou;
@@ -202,6 +214,7 @@ int inserir_chave(short rrn, Chave chave, FILE* file, short *promo_r_child, Chav
 	return 1;
 
 }
+
 void inserir_na_pagina(Chave chave, short r_child, Pagina *p_page){
 	int j;
 	int keyCodCli, keyCodF, pageCodCli, pageCodF;
@@ -226,6 +239,7 @@ void inserir_na_pagina(Chave chave, short r_child, Pagina *p_page){
 	p_page->child[j+1] = r_child;
 	
 }
+
 int procurar_chave(Chave chave, Pagina *pagina, short *pos){
 	int i=0; 
 	
@@ -252,33 +266,28 @@ int procurar_chave(Chave chave, Pagina *pagina, short *pos){
 		return 0; // key nao esta na pagina
 	}
 }
+
 void lerPagina(short rrn, Pagina *pagina, FILE* file){
-	int endereco;
+	short endereco;
 	endereco = rrn * PAGESIZE + 2;
 	fseek(file, endereco, SEEK_SET);
 	fread(pagina, sizeof(Pagina), 1, file);
 		
 }
-int create_tree(Chave chave){
+
+void create_tree(Chave chave){
 	short firstRoot = 0; 
 	FILE* file;
 	file = fopen("arvoreb.bin", "wb+");
 	fseek(file, 0, SEEK_SET);
 	fwrite(&firstRoot, sizeof(short), 1, file);
-	return create_root(file, chave, NIL, NIL);
+	create_root(file, chave, NIL, NIL);
 	fclose(file);
 }
-int create_root(FILE* file, Chave chave, short left, short right){
+
+short create_root(FILE* file, Chave chave, short left, short right){
 	Pagina pagina;
 	short rrn;
-	//inicializando a pagina
-	for(int i = 0; i < MAXKEYS; i++){
-		strcpy(pagina.key[i].CodCli, NOKEY);
-		strcpy(pagina.key[i].CodF, NOKEY);
-		pagina.key[i].offSet_MainFile = NIL;
-		pagina.child[i] = NIL;	
-	}
-	pagina.child[MAXKEYS] = NIL;
 	pageinit(&pagina);
 	//fim da inicialização
 	pagina.key[0] = chave;
@@ -296,8 +305,7 @@ int create_root(FILE* file, Chave chave, short left, short right){
 	return rrn;
 }
 
-
-int getpage(FILE *file)
+short getpage(FILE *file)
 { //retorna o rrn da  ultima pagina
 	fseek(file, 0, SEEK_END); 
 
@@ -311,10 +319,10 @@ int getpage(FILE *file)
 
 }
 
-int write_page(short rrn, Pagina *page, FILE *file){
+void write_page(short rrn, Pagina *page, FILE *file){
 	int addr = rrn * PAGESIZE + 2; // 0 * 50 + 2 = 2
 	fseek(file, addr, SEEK_SET);
-	return fwrite(page, sizeof(Pagina), 1, file);
+	fwrite(page, sizeof(Pagina), 1, file);
 }
 
 void inserir_mainFile(ClienteFilme *vetor_insere, Controle *controle){
@@ -331,7 +339,7 @@ void inserir_mainFile(ClienteFilme *vetor_insere, Controle *controle){
             
 	if ((mainFile = fopen("mainfile.bin", "rb+")) == NULL)
 	{
-		printf("\nNao foi possivel encontrar o arquivo de controle =(\nVamos criar um...!\n");
+		printf("\nNao foi possivel encontrar o mainFile =(\nVamos criar um...!\n");
 		mainFile = fopen("mainfile.bin", "wb+");
 	}
 
@@ -472,6 +480,107 @@ void pageinit(Pagina *p_page)
 
 }
 
+int buscaChave(short rrn, Chave chaveProcurada, FILE *treeFile, BuscaInfo *infoChaveEncontrada){
+	Pagina auxPagina;
+	short pos;
+	int foundKey;
+
+	if(rrn != NIL && infoChaveEncontrada->offSet != NIL){
+		return 1;
+	}
+
+	if(rrn == NIL){
+		return 0;
+	}
+
+	lerPagina(rrn, &auxPagina, treeFile);
+	foundKey = procurar_chave(chaveProcurada, &auxPagina, &pos);
+	if(foundKey == 1){
+		infoChaveEncontrada->offSet = auxPagina.key[pos].offSet_MainFile;
+		infoChaveEncontrada->pagina = rrn;
+		infoChaveEncontrada->posicao = pos;
+		return 1;
+	}else{   /// foundkey retornar 0 do procurar chave
+		foundKey = buscaChave(auxPagina.child[pos], chaveProcurada, treeFile, &*infoChaveEncontrada);
+		if(foundKey == 1){
+			return 1;
+		}else{
+			return 0;
+		}
+	}
 
 
- 
+	
+
+}
+
+void lista_cliente_especifico(Busca *vetor_busca, Controle *controle){
+	Chave chaveProcurada;
+	short rrnRoot;
+	short keyOffSetMainFile = -1;
+	FILE *treeFile;
+	FILE *mainFile;
+	int foundKey = 0;
+	BuscaInfo infoChaveEncontrada;
+	ClienteFilme clienteEncontrado;
+	infoChaveEncontrada.offSet = -1;
+
+	treeFile = fopen("arvoreb.bin", "rb+");
+	
+	strcpy(chaveProcurada.CodCli, vetor_busca[controle->qtdBuscado].CodCli);
+	strcpy(chaveProcurada.CodF, vetor_busca[controle->qtdBuscado].CodF);
+	rrnRoot = getRoot(treeFile);
+
+	foundKey = buscaChave(rrnRoot, chaveProcurada, treeFile, &infoChaveEncontrada);
+	if(foundKey == 1){
+		printf("\nChave %s %s encontrada, pagina %d, posicao %d", chaveProcurada.CodCli, 
+		chaveProcurada.CodF, infoChaveEncontrada.pagina, infoChaveEncontrada.posicao);
+		print_registro(infoChaveEncontrada.offSet);
+		controle->qtdBuscado++;
+	}else{
+		printf("\nChave %s %s nao encontrada!", chaveProcurada.CodCli, chaveProcurada.CodF);
+		controle->qtdBuscado++;
+	}		
+	fclose(treeFile);
+
+}
+int qtd_filhos(Pagina *pagina){
+	int quantidadeFilhos=0;
+	for(int i=0; i<4; i++){
+		if(pagina->child[i] != -1){
+			quantidadeFilhos++;
+		}
+	}
+	return quantidadeFilhos;
+
+}
+
+void print_registro(int offset){
+	FILE* mainfile;
+	char registro[160];
+	mainfile = fopen("mainfile.bin", "rb+");
+	fseek(mainfile, offset, SEEK_SET);
+	fread(registro, sizeof(char), 160, mainfile);
+	printf("\n%s", registro);
+}
+void listar_dados_clientes(Pagina *pagina, FILE* file){
+	Pagina auxPagina;
+	if(pagina != NULL){
+		if(qtd_filhos(pagina) == 0){
+			for(int j=0; j<pagina->keycount; j++){
+				print_registro(pagina->key[j].offSet_MainFile);
+
+			}
+		}
+
+		for(int i=0; i< qtd_filhos(pagina); i++){
+			lerPagina(pagina->child[i], &auxPagina, file);
+			listar_dados_clientes(&auxPagina, file);
+			if( i < pagina->keycount){
+				print_registro(pagina->key[i].offSet_MainFile);
+			}
+		}
+
+	}
+}
+
