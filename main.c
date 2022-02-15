@@ -24,7 +24,7 @@ typedef struct{
 	char NomeCli[50];
 	char NomeF[50];
 	char Genero[50];
-} ClienteFilme;
+} ClienteFilme; //
 
 typedef struct{
     char CodCli[3]; //3
@@ -69,18 +69,20 @@ void split(Chave chave,short r_child, Pagina *p_antiga, Chave *promo_key, short 
 void pageinit(Pagina *p_page);
 void lista_cliente_especifico(Busca *vetor_busca, Controle *controle);
 int buscaChave(short rrn, Chave chaveProcurada, FILE *treeFile, BuscaInfo *infoChaveEncontrada);
+void print_registro(int offset);
+int qtd_filhos(Pagina *pagina);
+void listar_dados_clientes(Pagina *pagina, FILE* file);
 
 int main(){
     Controle *controle = (Controle *)malloc(sizeof(Controle));
     ClienteFilme *vetor_insere = (ClienteFilme*)malloc(sizeof(ClienteFilme));
     Busca *vetor_busca = (Busca*)malloc(sizeof(Busca)); 
-	TESTE testando;
     int opcao;
     FILE* controleFile;
     int validade; 
-	short teste;
-	
-	
+	short rrnRaiz;	
+	FILE* arvorebFile;
+	Pagina* pagina;
 	
     while (opcao != 5){
 		printf("\n1. Insercao");
@@ -97,11 +99,17 @@ int main(){
 					inserir_mainFile(vetor_insere, controle);
 					printf("\nChave %s %s inserida com sucesso", vetor_insere[controle->qtdInserido-1].CodCli, vetor_insere[controle->qtdInserido-1].CodF);
 				}else{
+					controle->qtdInserido++;
 					printf("\nChave %s %s duplicada", vetor_insere[controle->qtdInserido].CodCli, vetor_insere[controle->qtdInserido].CodF);
 				}
 				
 				break;
 			case 2:
+				arvorebFile = fopen("arvoreb.bin", "rb+");
+				rrnRaiz = getRoot(arvorebFile);
+				lerPagina(rrnRaiz, pagina, arvorebFile);
+				listar_dados_clientes(pagina, arvorebFile);
+				fclose(arvorebFile);
 				break;
 			case 3:
 				lista_cliente_especifico(vetor_busca, controle);
@@ -518,7 +526,6 @@ void lista_cliente_especifico(Busca *vetor_busca, Controle *controle){
 	infoChaveEncontrada.offSet = -1;
 
 	treeFile = fopen("arvoreb.bin", "rb+");
-	mainFile = fopen("mainfile.bin", "rb+");
 	
 	strcpy(chaveProcurada.CodCli, vetor_busca[controle->qtdBuscado].CodCli);
 	strcpy(chaveProcurada.CodF, vetor_busca[controle->qtdBuscado].CodF);
@@ -528,14 +535,52 @@ void lista_cliente_especifico(Busca *vetor_busca, Controle *controle){
 	if(foundKey == 1){
 		printf("\nChave %s %s encontrada, pagina %d, posicao %d", chaveProcurada.CodCli, 
 		chaveProcurada.CodF, infoChaveEncontrada.pagina, infoChaveEncontrada.posicao);
-		fseek(mainFile, infoChaveEncontrada.offSet, SEEK_SET);
-		fread(&clienteEncontrado, sizeof(ClienteFilme), 1, mainFile);
-		printf("\nRegistro: %s", clienteEncontrado.CodCli);
+		print_registro(infoChaveEncontrada.offSet);
 		controle->qtdBuscado++;
 	}else{
 		printf("\nChave %s %s nao encontrada!", chaveProcurada.CodCli, chaveProcurada.CodF);
 		controle->qtdBuscado++;
-	}							
+	}		
+	fclose(treeFile);
 
+}
+int qtd_filhos(Pagina *pagina){
+	int quantidadeFilhos=0;
+	for(int i=0; i<4; i++){
+		if(pagina->child[i] != -1){
+			quantidadeFilhos++;
+		}
+	}
+	return quantidadeFilhos;
+
+}
+
+void print_registro(int offset){
+	FILE* mainfile;
+	char registro[160];
+	mainfile = fopen("mainfile.bin", "rb+");
+	fseek(mainfile, offset, SEEK_SET);
+	fread(registro, sizeof(char), 160, mainfile);
+	printf("\n%s", registro);
+}
+void listar_dados_clientes(Pagina *pagina, FILE* file){
+	Pagina auxPagina;
+	if(pagina != NULL){
+		if(qtd_filhos(pagina) == 0){
+			for(int j=0; j<pagina->keycount; j++){
+				print_registro(pagina->key[j].offSet_MainFile);
+
+			}
+		}
+
+		for(int i=0; i< qtd_filhos(pagina); i++){
+			lerPagina(pagina->child[i], &auxPagina, file);
+			listar_dados_clientes(&auxPagina, file);
+			if( i < pagina->keycount){
+				print_registro(pagina->key[i].offSet_MainFile);
+			}
+		}
+
+	}
 }
 
