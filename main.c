@@ -1,3 +1,7 @@
+/*
+ Alunos: Gabriel Ferreira Teixeira
+ Guilherme Henrique Zampronio
+ */
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -78,7 +82,7 @@ int main(){
     int validade; 
 	short rrnRaiz;	
 	FILE* arvorebFile;
-	Pagina* pagina;
+	Pagina* pagina =  (Pagina*)malloc(sizeof(Pagina));;
 	
     while (opcao != 5){
 		printf("\n1. Insercao");
@@ -134,7 +138,7 @@ short getRoot(FILE *file){
 int inserir_indice(ClienteFilme *vetor_insere, Controle *controle){
 	FILE* file;
     short rrnRoot;
-	int promoted;
+	int promoted=0;
 	Chave promo_key;
 	short promo_rrn;
 
@@ -530,12 +534,9 @@ int buscaChave(short rrn, Chave chaveProcurada, FILE *treeFile, BuscaInfo *infoC
 void lista_cliente_especifico(Busca *vetor_busca, Controle *controle){
 	Chave chaveProcurada;
 	short rrnRoot;
-	short keyOffSetMainFile = -1;
 	FILE *treeFile;
-	FILE *mainFile;
 	int foundKey = 0;
 	BuscaInfo infoChaveEncontrada;
-	ClienteFilme clienteEncontrado;
 	infoChaveEncontrada.offSet = -1;
 
 	treeFile = fopen("arvoreb.bin", "rb+");

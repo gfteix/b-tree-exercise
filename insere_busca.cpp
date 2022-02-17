@@ -1,4 +1,5 @@
 #include<stdio.h>
+#include<conio.h>
 #include<string.h>
 
 int main() {
@@ -11,32 +12,18 @@ int main() {
         char NomeCli[50];
         char NomeF[50];
         char Genero[50];
-    } vet[10] = {
-                {"01", "01", "Joao da Silva", "Filme-1", "Aventura"},
-                {"01", "03", "Joao da Silva", "Filme-3", "Aventura"},    
-				{"01", "02", "Joao da Silva", "Filme-2", "Aventura"},
-				{"02", "03", "Pedro Silva e Silva", "Filme-3", "Aventura"},
-				{"02", "02", "Pedro Silva e Silva", "Filme-2", "Aventura"},
-                {"02", "04", "Pedro Silva e Silva", "Filme-4", "Aventura"},
-                {"01", "04", "Joao da SIlva", "Filme-1", "Aventura"},
-                {"01", "01", "Joao da Silva", "Filme-1", "Aventura"},
-                {"01", "05", "Joao da Silva", "Filme-5", "OGENERO"},
-                {"01", "06", "Pedro Silva e Silva", "Filme-4", "Aventura"}
-
-
-/*
-{{"01", "01", "Joao da Silva", "Filme-1", "Aventura"},              
-                {"01", "03", "Joao da Silva", "Filme-3", "Aventura"},
-				{"01", "02", "Joao da Silva", "Filme-2", "Aventura"},
-				{"02", "03", "Pedro Silva e Silva", "Filme-3", "Aventura"},
-				{"02", "02", "Pedro Silva e Silva", "Filme-2", "Aventura"},
-                {"02", "04", "Pedro Silva e Silva", "Filme-4", "Aventura"},
-                {"01", "04", "Joao da SIlva", "Filme-1", "Aventura"},
-                {"01", "01", "Joao da Silva", "Filme-1", "Aventura"},
-                {"01", "05", "Joao da Silva", "Filme-5", "OGENERO"},
-                {"01", "06", "Pedro Silva e Silva", "Filme-4", "Aventura"}
-*/
-};//duplicada
+    } vet[11] = {{"00", "01", "Nome-00", "Filme-01", "Gen-01"},              
+                {"00", "02", "Nome-00", "Filme-02", "Gen-02"},
+				{"00", "03", "Nome-00", "Filme-03", "Gen-03"},
+				{"00", "04", "Nome-00", "Filme-04", "Gen-04"},
+				{"00", "05", "Nome-00", "Filme-05", "Gen-05"},
+				{"00", "06", "Nome-00", "Filme-06", "Gen-06"},
+				{"00", "07", "Nome-00", "Filme-07", "Gen-07"},
+				{"00", "08", "Nome-00", "Filme-08", "Gen-08"},
+				{"00", "09", "Nome-00", "Filme-09", "Gen-09"},
+				
+				{"00", "10", "Nome-00", "Filme-10", "Gen-10"},
+				{"00", "10", "Nome-00", "Filme-10", "Gen-10"}};//duplicada
        
     fd = fopen("insere.bin", "w+b");
     fwrite(vet, sizeof(vet), 1, fd);
@@ -46,9 +33,11 @@ int main() {
 	struct busca {
         char CodCli[3];
         char CodF[3];
-    } vet_b[3] = {{"01","01"},
-                  {"01","03"},
-				  {"05", "07"}};//nï¿½o encontrada
+    } vet_b[5] = {{"00","10"},
+                  {"00","08"},
+				  {"00","04"},
+				  {"00","03"},
+				  {"00","00"}};//não encontrada
     
     fd = fopen("busca.bin", "w+b");
     fwrite(vet_b, sizeof(vet_b), 1, fd);
