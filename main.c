@@ -1,11 +1,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-/*
-TAREFAS:
-- Arrumar ordenação
-
-*/
 
 #define MAXKEYS 3
 #define MINKEYS MAXKEYS/2
