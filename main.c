@@ -372,7 +372,7 @@ void carrega_arquivo(ClienteFilme **vetor_insere, Busca **vetor_busca, Controle 
 	fclose(fd);
 
 
-	fd = fopen("insere_2.bin", "rb+");
+	fd = fopen("insere.bin", "rb+");
 
 	int k = 0;
 	ClienteFilme clienteFilmeAux;
@@ -385,7 +385,7 @@ void carrega_arquivo(ClienteFilme **vetor_insere, Busca **vetor_busca, Controle 
 	printf("\nArquivo Insere.bin carregado");
 	fclose(fd);
 
-	fd = fopen("busca_1.bin", "rb+");
+	fd = fopen("busca.bin", "rb+");
 	k = 0;
 	Busca buscaAux;
 	while (fread(&buscaAux, sizeof(Busca), 1, fd))
