@@ -4,7 +4,7 @@
 
 #define MAXKEYS 3
 #define MINKEYS MAXKEYS/2
-#define NOKEY "@"
+#define NOKEY "@@@"
 #define NIL -1
 #define PAGESIZE 34
 
@@ -211,9 +211,9 @@ void inserir_na_pagina(Chave chave, short r_child, Pagina *p_page){
 	char keyString[7] = "";
 	char pageKeyString[7] = "";
 
-	strncat(keyString, chave.CodCli, 3);
-	strncat(keyString, chave.CodF, 3);
-	key = atoi(keyString);
+	strncat(keyString, chave.CodCli, 3); 
+	strncat(keyString, chave.CodF, 3); 
+	key = atoi(keyString); 
 
 	for(j = p_page->keycount; j > 0; j--){
 
@@ -252,7 +252,6 @@ int procurar_chave(Chave chave, Pagina *pagina, short *pos){
 	strncat(keyString, chave.CodCli, 3);
 	strncat(keyString, chave.CodF, 3);
 	key = atoi(keyString);
-
 	for(i = 0; i < pagina->keycount; i++){ 
 		strncat(pageKeyString, pagina->key[i].CodCli, 3);
 		strncat(pageKeyString, pagina->key[i].CodF, 3);
@@ -264,7 +263,7 @@ int procurar_chave(Chave chave, Pagina *pagina, short *pos){
 	}
 	*pos = i;
 	
-	                                                             
+                                                       
 	if (*pos < pagina->keycount && (strcmp(chave.CodCli, pagina->key[*pos].CodCli) == 0
 	&& strcmp(chave.CodF, pagina->key[*pos].CodF) == 0 )){
 		return 1; // key esta na pagina
@@ -310,7 +309,7 @@ short create_root(FILE* file, Chave chave, short left, short right){
 }
 
 short getpage(FILE *file)
-{ //retorna o rrn da  ultima pagina
+{ 
 	fseek(file, 0, SEEK_END); 
 
 	short rrn = ftell(file) - 2; 
@@ -373,7 +372,7 @@ void carrega_arquivo(ClienteFilme **vetor_insere, Busca **vetor_busca, Controle 
 	fclose(fd);
 
 
-	fd = fopen("insere.bin", "rb+");
+	fd = fopen("insere_2.bin", "rb+");
 
 	int k = 0;
 	ClienteFilme clienteFilmeAux;
@@ -386,7 +385,7 @@ void carrega_arquivo(ClienteFilme **vetor_insere, Busca **vetor_busca, Controle 
 	printf("\nArquivo Insere.bin carregado");
 	fclose(fd);
 
-	fd = fopen("busca.bin", "rb+");
+	fd = fopen("busca_1.bin", "rb+");
 	k = 0;
 	Busca buscaAux;
 	while (fread(&buscaAux, sizeof(Busca), 1, fd))
@@ -425,7 +424,6 @@ void split(Chave chave,short r_child, Pagina *p_antiga, Chave *promo_key, short 
 	workchil[j] = p_antiga->child[j];
 
 	for (j = MAXKEYS;  j > 0; j--){
-
 		strncat(pageKeyString, workkeys[j-1].CodCli, 3);
 		strncat(pageKeyString, workkeys[j-1].CodF, 3);
 		pageKey = atoi(pageKeyString);

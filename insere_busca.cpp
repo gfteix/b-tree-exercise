@@ -12,7 +12,7 @@ int main() {
         char NomeF[50];
         char Genero[50];
     } vet[10] = {
-                {"O1", "01", "Joao da Silva", "Filme-1", "Aventura"},
+                {"01", "01", "Joao da Silva", "Filme-1", "Aventura"},
                 {"01", "03", "Joao da Silva", "Filme-3", "Aventura"},    
 				{"01", "02", "Joao da Silva", "Filme-2", "Aventura"},
 				{"02", "03", "Pedro Silva e Silva", "Filme-3", "Aventura"},
