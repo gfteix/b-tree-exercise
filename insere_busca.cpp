@@ -11,13 +11,31 @@ int main() {
         char NomeCli[50];
         char NomeF[50];
         char Genero[50];
-    } vet[6] = {{"01", "01", "Joao da Silva", "Filme-1", "Aventura"},              
+    } vet[10] = {
+                {"O1", "01", "Joao da Silva", "Filme-1", "Aventura"},
+                {"01", "03", "Joao da Silva", "Filme-3", "Aventura"},    
+				{"01", "02", "Joao da Silva", "Filme-2", "Aventura"},
+				{"02", "03", "Pedro Silva e Silva", "Filme-3", "Aventura"},
+				{"02", "02", "Pedro Silva e Silva", "Filme-2", "Aventura"},
+                {"02", "04", "Pedro Silva e Silva", "Filme-4", "Aventura"},
+                {"01", "04", "Joao da SIlva", "Filme-1", "Aventura"},
+                {"01", "01", "Joao da Silva", "Filme-1", "Aventura"},
+                {"01", "05", "Joao da Silva", "Filme-5", "OGENERO"},
+                {"01", "06", "Pedro Silva e Silva", "Filme-4", "Aventura"}
+
+
+/*
+{{"01", "01", "Joao da Silva", "Filme-1", "Aventura"},              
                 {"01", "03", "Joao da Silva", "Filme-3", "Aventura"},
 				{"01", "02", "Joao da Silva", "Filme-2", "Aventura"},
-				
 				{"02", "03", "Pedro Silva e Silva", "Filme-3", "Aventura"},
-				{"02", "02", "Pedro Silva e Silva", "Filme-5", "Aventura"},
-                {"02", "04", "Pedro Silva e Silva", "Filme-4", "Aventura"}//duplicada
+				{"02", "02", "Pedro Silva e Silva", "Filme-2", "Aventura"},
+                {"02", "04", "Pedro Silva e Silva", "Filme-4", "Aventura"},
+                {"01", "04", "Joao da SIlva", "Filme-1", "Aventura"},
+                {"01", "01", "Joao da Silva", "Filme-1", "Aventura"},
+                {"01", "05", "Joao da Silva", "Filme-5", "OGENERO"},
+                {"01", "06", "Pedro Silva e Silva", "Filme-4", "Aventura"}
+*/
 };//duplicada
        
     fd = fopen("insere.bin", "w+b");
