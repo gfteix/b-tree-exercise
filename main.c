@@ -1,19 +1,15 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-/*
-TAREFAS:
-- Arrumar offsets na árvore b
-
-*/
 
 #define MAXKEYS 3
 #define MINKEYS MAXKEYS/2
-#define NOKEY "@"
+#define NOKEY "@@@"
 #define NIL -1
 #define PAGESIZE 34
 
 typedef struct{
+	int indice;
 	int qtdInserido;
     int qtdBuscado;
 } Controle;
@@ -24,13 +20,13 @@ typedef struct{
 	char NomeCli[50];
 	char NomeF[50];
 	char Genero[50];
-} ClienteFilme; //
+} ClienteFilme; 
 
 typedef struct{
-    char CodCli[3]; //3
-	char CodF[3]; //3
-	short offSet_MainFile; //2
-} Chave; //8
+    char CodCli[3]; 
+	char CodF[3]; 
+	short offSet_MainFile; 
+} Chave;
 
 typedef struct{
 	int teste;
@@ -42,10 +38,10 @@ typedef struct{
 } Busca;
 
 typedef struct{ 
-    short keycount; //2 
-    Chave key[MAXKEYS];   //30  (8*3) = 24
-    short child[MAXKEYS + 1]; // (2*4) = 8
-} Pagina; //34
+    short keycount; 
+    Chave key[MAXKEYS];  
+    short child[MAXKEYS + 1];
+} Pagina;
 
 typedef struct{
 	short offSet;
@@ -72,13 +68,13 @@ int buscaChave(short rrn, Chave chaveProcurada, FILE *treeFile, BuscaInfo *infoC
 void print_registro(int offset);
 int qtd_filhos(Pagina *pagina);
 void listar_dados_clientes(Pagina *pagina, FILE* file);
+void escrever_controle(Controle *controle);
 
 int main(){
     Controle *controle = (Controle *)malloc(sizeof(Controle));
     ClienteFilme *vetor_insere = (ClienteFilme*)malloc(sizeof(ClienteFilme));
     Busca *vetor_busca = (Busca*)malloc(sizeof(Busca)); 
     int opcao;
-    FILE* controleFile;
     int validade; 
 	short rrnRaiz;	
 	FILE* arvorebFile;
@@ -93,16 +89,16 @@ int main(){
 		scanf("%d", &opcao);
 		switch (opcao){
 			case 1:
-				printf("\n%s %s", vetor_insere[controle->qtdInserido].CodCli, vetor_insere[controle->qtdInserido].CodF);
+				printf("\n%s %s", vetor_insere[controle->indice].CodCli, vetor_insere[controle->indice].CodF);
 				validade = inserir_indice(vetor_insere, controle);
 				if(validade == 1){
 					inserir_mainFile(vetor_insere, controle);
-					printf("\nChave %s %s inserida com sucesso", vetor_insere[controle->qtdInserido-1].CodCli, vetor_insere[controle->qtdInserido-1].CodF);
+					printf("\nChave %s %s inserida com sucesso", vetor_insere[controle->indice].CodCli, vetor_insere[controle->indice].CodF);
 				}else{
-					controle->qtdInserido++;
-					printf("\nChave %s %s duplicada", vetor_insere[controle->qtdInserido].CodCli, vetor_insere[controle->qtdInserido].CodF);
+					printf("\nChave %s %s duplicada", vetor_insere[controle->indice].CodCli, vetor_insere[controle->indice].CodF);
 				}
-				
+				controle->indice++;
+				escrever_controle(controle);
 				break;
 			case 2:
 				arvorebFile = fopen("arvoreb.bin", "rb+");
@@ -113,16 +109,12 @@ int main(){
 				break;
 			case 3:
 				lista_cliente_especifico(vetor_busca, controle);
+				escrever_controle(controle);
 				break;
 			case 4:
                 carrega_arquivo(&vetor_insere, &vetor_busca, controle);
 				break;
 			case 5:
-                controleFile = fopen("controle.bin", "rb+");
-	            fseek(controleFile, 0, SEEK_SET);
-                fwrite(controle, sizeof(Controle), 1, controleFile);
-				fclose(controleFile);
-        
                 break;
 		}
 	}
@@ -147,8 +139,8 @@ int inserir_indice(ClienteFilme *vetor_insere, Controle *controle){
 	short promo_rrn;
 
 	Chave chaveAux;
-	stpcpy(chaveAux.CodCli,vetor_insere[controle->qtdInserido].CodCli);
-	strcpy(chaveAux.CodF, vetor_insere[controle->qtdInserido].CodF);
+	stpcpy(chaveAux.CodCli,vetor_insere[controle->indice].CodCli);
+	strcpy(chaveAux.CodF, vetor_insere[controle->indice].CodF);
 	chaveAux.offSet_MainFile = controle->qtdInserido * 160;
 	
 	if((file = fopen("arvoreb.bin", "rb+")) == NULL){ //se o arquivo ainda nao existe
@@ -182,7 +174,6 @@ int inserir_chave(short rrn, Chave chave, FILE* file, short *promo_r_child, Chav
 
 	
     if(rrn == NIL){
-        //
 		*promo_key = chave;
 		*promo_r_child = NIL;
 		return 1;
@@ -193,7 +184,6 @@ int inserir_chave(short rrn, Chave chave, FILE* file, short *promo_r_child, Chav
 		return -1;
 	}
 	promoted = inserir_chave(auxPagina.child[pos], chave, file, &p_b_rrn, &p_b_key);
-	// nao passa daqui
 	if(promoted == -1){
 		return -1;
 	}
@@ -214,25 +204,37 @@ int inserir_chave(short rrn, Chave chave, FILE* file, short *promo_r_child, Chav
 	return 1;
 
 }
-
 void inserir_na_pagina(Chave chave, short r_child, Pagina *p_page){
 	int j;
-	int keyCodCli, keyCodF, pageCodCli, pageCodF;
 
-	keyCodCli = atoi(chave.CodCli);
-	keyCodF = atoi(chave.CodF);
+	int key, pageKey;
+	char keyString[7] = "";
+	char pageKeyString[7] = "";
+
+	strncat(keyString, chave.CodCli, 3); 
+	strncat(keyString, chave.CodF, 3); 
+	key = atoi(keyString); 
+
+	for(j = p_page->keycount; j > 0; j--){
+
+		strncat(pageKeyString, p_page->key[j-1].CodCli, 3);
+		strncat(pageKeyString, p_page->key[j-1].CodF, 3);
+		pageKey = atoi(pageKeyString);
+
+		if(key <= pageKey){ 
+				strcpy(p_page->key[j].CodCli, p_page->key[j-1].CodCli);
+				strcpy(p_page->key[j].CodF, p_page->key[j-1].CodF);
+				p_page->key[j].offSet_MainFile = p_page->key[j-1].offSet_MainFile;
+				p_page->child[j+1] =  p_page->child[j];
+		}else{
+			break;
+		}
+		pageKeyString[0] = '\0';
+
 	
-	for(j = p_page->keycount; ((keyCodCli + keyCodF) < (atoi(p_page->key[j-1].CodCli) + atoi(p_page->key[j-1].CodF)) && j > 0); j--){
-		strcpy(p_page->key[j].CodCli, p_page->key[j-1].CodCli);
-		strcpy(p_page->key[j].CodF, p_page->key[j-1].CodF);
-
-		p_page->key[j].offSet_MainFile = p_page->key[j-1].offSet_MainFile;
-		
-		p_page->child[j+1] =  p_page->child[j];
 	}
 
 	p_page->keycount++;
-	//p_page->key[j] = chave;
 	strcpy(p_page->key[j].CodCli, chave.CodCli);
 	strcpy(p_page->key[j].CodF, chave.CodF);
 	p_page->key[j].offSet_MainFile = chave.offSet_MainFile;
@@ -243,28 +245,32 @@ void inserir_na_pagina(Chave chave, short r_child, Pagina *p_page){
 int procurar_chave(Chave chave, Pagina *pagina, short *pos){
 	int i=0; 
 	
-	int keyCodCli, keyCodF, pageCodCli, pageCodF;
+	int key, pageKey;
+	char keyString[7] = "";
+	char pageKeyString[7] = "";
 
-	keyCodCli = atoi(chave.CodCli);
-	keyCodF = atoi(chave.CodF);
-
-	for(i = 0; i < pagina->keycount; i++){ // i = 0 ou i = 1;
-		pageCodCli = atoi(pagina->key[i].CodCli);
-		pageCodF = atoi(pagina->key[i].CodF);
-
-		if(keyCodCli + keyCodF <= pageCodCli + pageCodF){
+	strncat(keyString, chave.CodCli, 3);
+	strncat(keyString, chave.CodF, 3);
+	key = atoi(keyString);
+	for(i = 0; i < pagina->keycount; i++){ 
+		strncat(pageKeyString, pagina->key[i].CodCli, 3);
+		strncat(pageKeyString, pagina->key[i].CodF, 3);
+		pageKey = atoi(pageKeyString);
+		if(key <= pageKey){
 			break;
 		}
+		pageKeyString[0] = '\0';
 	}
 	*pos = i;
 	
-	                                                             
+                                                       
 	if (*pos < pagina->keycount && (strcmp(chave.CodCli, pagina->key[*pos].CodCli) == 0
 	&& strcmp(chave.CodF, pagina->key[*pos].CodF) == 0 )){
 		return 1; // key esta na pagina
 	}else{
 		return 0; // key nao esta na pagina
 	}
+	return 0;
 }
 
 void lerPagina(short rrn, Pagina *pagina, FILE* file){
@@ -289,7 +295,6 @@ short create_root(FILE* file, Chave chave, short left, short right){
 	Pagina pagina;
 	short rrn;
 	pageinit(&pagina);
-	//fim da inicialização
 	pagina.key[0] = chave;
 	pagina.key[0].offSet_MainFile = chave.offSet_MainFile;
 	pagina.child[0] = left;
@@ -297,16 +302,14 @@ short create_root(FILE* file, Chave chave, short left, short right){
 	pagina.keycount = 1;
 	
 	rrn = getpage(file);
-	//offset = rrn * tamPagina = 0 * 50 + tamHeader
 	write_page(rrn,&pagina,file);
-	//escrevendo o rrn do root no header
 	fseek(file, 0, SEEK_SET);
 	fwrite(&rrn, sizeof(short), 1, file);
 	return rrn;
 }
 
 short getpage(FILE *file)
-{ //retorna o rrn da  ultima pagina
+{ 
 	fseek(file, 0, SEEK_END); 
 
 	short rrn = ftell(file) - 2; 
@@ -320,22 +323,20 @@ short getpage(FILE *file)
 }
 
 void write_page(short rrn, Pagina *page, FILE *file){
-	int addr = rrn * PAGESIZE + 2; // 0 * 50 + 2 = 2
+	int addr = rrn * PAGESIZE + 2; 
 	fseek(file, addr, SEEK_SET);
 	fwrite(page, sizeof(Pagina), 1, file);
 }
 
 void inserir_mainFile(ClienteFilme *vetor_insere, Controle *controle){
 	FILE* mainFile;
-    //3#3#50#50#50;
-    //160
 	char registro[160];
 	sprintf(registro, "%s#%s#%s#%s#%s",
-			vetor_insere[controle->qtdInserido].CodCli,
-			vetor_insere[controle->qtdInserido].CodF,
-			vetor_insere[controle->qtdInserido].NomeCli,
-			vetor_insere[controle->qtdInserido].NomeF,
-			vetor_insere[controle->qtdInserido].Genero);
+			vetor_insere[controle->indice].CodCli,
+			vetor_insere[controle->indice].CodF,
+			vetor_insere[controle->indice].NomeCli,
+			vetor_insere[controle->indice].NomeF,
+			vetor_insere[controle->indice].Genero);
             
 	if ((mainFile = fopen("mainfile.bin", "rb+")) == NULL)
 	{
@@ -364,13 +365,14 @@ void carrega_arquivo(ClienteFilme **vetor_insere, Busca **vetor_busca, Controle 
 	if(fread(controle, sizeof(Controle), 1, fd)){
 		printf("\nArquivo Controle.bin carregado");
 	}else{
+		controle->indice = 0;
 		controle->qtdInserido = 0;
         controle->qtdBuscado = 0;
 	}
 	fclose(fd);
 
 
-	fd = fopen("insere.bin", "rb+");
+	fd = fopen("insere_2.bin", "rb+");
 
 	int k = 0;
 	ClienteFilme clienteFilmeAux;
@@ -383,7 +385,7 @@ void carrega_arquivo(ClienteFilme **vetor_insere, Busca **vetor_busca, Controle 
 	printf("\nArquivo Insere.bin carregado");
 	fclose(fd);
 
-	fd = fopen("busca.bin", "rb+");
+	fd = fopen("busca_1.bin", "rb+");
 	k = 0;
 	Busca buscaAux;
 	while (fread(&buscaAux, sizeof(Busca), 1, fd))
@@ -404,12 +406,15 @@ void split(Chave chave,short r_child, Pagina *p_antiga, Chave *promo_key, short 
 	short workchil[MAXKEYS+2]; // temporario para segurar os ponteiros antes do split
 
 
-	int chaveCodCli, chaveCodF;
-	chaveCodCli = atoi(chave.CodCli);
-	chaveCodF = atoi(chave.CodF);
+	int key, pageKey;
+	char keyString[7] = "";
+	char pageKeyString[7] = "";
 
+	strncat(keyString, chave.CodCli, 3);
+	strncat(keyString, chave.CodF, 3);
+	key = atoi(keyString);
 	
-	for (j = 0; j < MAXKEYS; j++){   // passando pela pagina para salvar na pagina temporaria work
+	for (j = 0; j < MAXKEYS; j++){   // passando pela pagina para salvar na pagina temporaria 
 		strcpy(workkeys[j].CodCli, p_antiga->key[j].CodCli);
 		strcpy(workkeys[j].CodF , p_antiga->key[j].CodF);
 		workkeys[j].offSet_MainFile = p_antiga->key[j].offSet_MainFile;
@@ -418,9 +423,19 @@ void split(Chave chave,short r_child, Pagina *p_antiga, Chave *promo_key, short 
 	
 	workchil[j] = p_antiga->child[j];
 
-	for (j = MAXKEYS; (chaveCodCli+chaveCodF) < (atoi(workkeys[j-1].CodCli) + atoi(workkeys[j-1].CodF)) && j > 0; j--){
-		workkeys[j] = workkeys[j-1];
-		workchil[j+1] = workchil[j];
+	for (j = MAXKEYS;  j > 0; j--){
+		strncat(pageKeyString, workkeys[j-1].CodCli, 3);
+		strncat(pageKeyString, workkeys[j-1].CodF, 3);
+		pageKey = atoi(pageKeyString);
+
+		if(key <= pageKey)
+		{
+			workkeys[j] = workkeys[j-1];
+			workchil[j+1] = workchil[j];
+		}else{
+			break;
+		}
+		pageKeyString[0] = '\0';
 	}
 	workkeys[j] = chave;
 	workchil[j+1] = r_child;
@@ -447,7 +462,6 @@ void split(Chave chave,short r_child, Pagina *p_antiga, Chave *promo_key, short 
 	p_antiga->child[3] = NIL;
 	
 	for(j = 0; j < MAXKEYS; j++){
-		 //j=2  === > novapagina key [2] = [1+1+2] = [4]
 		strcpy(novaPagina->key[j].CodCli, workkeys[mid+1+j].CodCli);  
 		strcpy(novaPagina->key[j].CodF, workkeys[mid+1+j].CodF); 
 		novaPagina->child[j] = workchil[mid+1+j];
@@ -456,7 +470,6 @@ void split(Chave chave,short r_child, Pagina *p_antiga, Chave *promo_key, short 
 	strcpy(novaPagina->key[2].CodCli, NOKEY);  
 	strcpy(novaPagina->key[2].CodF, NOKEY); 
 	novaPagina->key[2].offSet_MainFile = NIL;
-	// GAMBIARRA ACIMA
 	strcpy(promo_key->CodCli, workkeys[mid].CodCli);
 	strcpy(promo_key->CodF, workkeys[mid].CodF);
 	promo_key->offSet_MainFile = workkeys[mid].offSet_MainFile;
@@ -584,3 +597,11 @@ void listar_dados_clientes(Pagina *pagina, FILE* file){
 	}
 }
 
+void escrever_controle(Controle *controle){
+	FILE* file;
+	file = fopen("controle.bin", "rb+");
+	fseek(file, 0, SEEK_SET);
+	fwrite(controle, sizeof(Controle), 1, file);
+	fclose(file);
+
+}
