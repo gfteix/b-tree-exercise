@@ -25,13 +25,13 @@ typedef struct{
 	char NomeCli[50];
 	char NomeF[50];
 	char Genero[50];
-} ClienteFilme; //
+} ClienteFilme; 
 
 typedef struct{
-    char CodCli[3]; //3
-	char CodF[3]; //3
-	short offSet_MainFile; //2
-} Chave; //8
+    char CodCli[3]; 
+	char CodF[3]; 
+	short offSet_MainFile; 
+} Chave;
 
 typedef struct{
 	int teste;
@@ -43,10 +43,10 @@ typedef struct{
 } Busca;
 
 typedef struct{ 
-    short keycount; //2 
-    Chave key[MAXKEYS];   //30  (8*3) = 24
-    short child[MAXKEYS + 1]; // (2*4) = 8
-} Pagina; //34
+    short keycount; 
+    Chave key[MAXKEYS];  
+    short child[MAXKEYS + 1];
+} Pagina;
 
 typedef struct{
 	short offSet;
@@ -80,7 +80,6 @@ int main(){
     ClienteFilme *vetor_insere = (ClienteFilme*)malloc(sizeof(ClienteFilme));
     Busca *vetor_busca = (Busca*)malloc(sizeof(Busca)); 
     int opcao;
-    //FILE* controleFile;
     int validade; 
 	short rrnRaiz;	
 	FILE* arvorebFile;
@@ -180,7 +179,6 @@ int inserir_chave(short rrn, Chave chave, FILE* file, short *promo_r_child, Chav
 
 	
     if(rrn == NIL){
-        //
 		*promo_key = chave;
 		*promo_r_child = NIL;
 		return 1;
@@ -191,7 +189,6 @@ int inserir_chave(short rrn, Chave chave, FILE* file, short *promo_r_child, Chav
 		return -1;
 	}
 	promoted = inserir_chave(auxPagina.child[pos], chave, file, &p_b_rrn, &p_b_key);
-	// nao passa daqui
 	if(promoted == -1){
 		return -1;
 	}
@@ -243,7 +240,6 @@ void inserir_na_pagina(Chave chave, short r_child, Pagina *p_page){
 	}
 
 	p_page->keycount++;
-	//p_page->key[j] = chave;
 	strcpy(p_page->key[j].CodCli, chave.CodCli);
 	strcpy(p_page->key[j].CodF, chave.CodF);
 	p_page->key[j].offSet_MainFile = chave.offSet_MainFile;
@@ -262,7 +258,7 @@ int procurar_chave(Chave chave, Pagina *pagina, short *pos){
 	strncat(keyString, chave.CodF, 3);
 	key = atoi(keyString);
 
-	for(i = 0; i < pagina->keycount; i++){ // i = 0 ou i = 1;
+	for(i = 0; i < pagina->keycount; i++){ 
 		strncat(pageKeyString, pagina->key[i].CodCli, 3);
 		strncat(pageKeyString, pagina->key[i].CodF, 3);
 		pageKey = atoi(pageKeyString);
@@ -305,7 +301,6 @@ short create_root(FILE* file, Chave chave, short left, short right){
 	Pagina pagina;
 	short rrn;
 	pageinit(&pagina);
-	//fim da inicialização
 	pagina.key[0] = chave;
 	pagina.key[0].offSet_MainFile = chave.offSet_MainFile;
 	pagina.child[0] = left;
@@ -313,9 +308,7 @@ short create_root(FILE* file, Chave chave, short left, short right){
 	pagina.keycount = 1;
 	
 	rrn = getpage(file);
-	//offset = rrn * tamPagina = 0 * 50 + tamHeader
 	write_page(rrn,&pagina,file);
-	//escrevendo o rrn do root no header
 	fseek(file, 0, SEEK_SET);
 	fwrite(&rrn, sizeof(short), 1, file);
 	return rrn;
@@ -336,15 +329,13 @@ short getpage(FILE *file)
 }
 
 void write_page(short rrn, Pagina *page, FILE *file){
-	int addr = rrn * PAGESIZE + 2; // 0 * 50 + 2 = 2
+	int addr = rrn * PAGESIZE + 2; 
 	fseek(file, addr, SEEK_SET);
 	fwrite(page, sizeof(Pagina), 1, file);
 }
 
 void inserir_mainFile(ClienteFilme *vetor_insere, Controle *controle){
 	FILE* mainFile;
-    //3#3#50#50#50;
-    //160
 	char registro[160];
 	sprintf(registro, "%s#%s#%s#%s#%s",
 			vetor_insere[controle->indice].CodCli,
@@ -478,7 +469,6 @@ void split(Chave chave,short r_child, Pagina *p_antiga, Chave *promo_key, short 
 	p_antiga->child[3] = NIL;
 	
 	for(j = 0; j < MAXKEYS; j++){
-		 //j=2  === > novapagina key [2] = [1+1+2] = [4]
 		strcpy(novaPagina->key[j].CodCli, workkeys[mid+1+j].CodCli);  
 		strcpy(novaPagina->key[j].CodF, workkeys[mid+1+j].CodF); 
 		novaPagina->child[j] = workchil[mid+1+j];
@@ -487,7 +477,6 @@ void split(Chave chave,short r_child, Pagina *p_antiga, Chave *promo_key, short 
 	strcpy(novaPagina->key[2].CodCli, NOKEY);  
 	strcpy(novaPagina->key[2].CodF, NOKEY); 
 	novaPagina->key[2].offSet_MainFile = NIL;
-	// GAMBIARRA ACIMA
 	strcpy(promo_key->CodCli, workkeys[mid].CodCli);
 	strcpy(promo_key->CodF, workkeys[mid].CodF);
 	promo_key->offSet_MainFile = workkeys[mid].offSet_MainFile;
