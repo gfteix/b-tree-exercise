@@ -145,7 +145,7 @@ int insert_register(Register *registers, Control *control){
 	FILE* file;
 	Key promo_key;
 
-	Key aux_key
+	Key aux_key;
 	stpcpy(aux_key.client_code,registers[control->register_index].client_code);
 	strcpy(aux_key.movie_code, registers[control->register_index].movie_code);
 	aux_key.offset_in_mainfile = control->insert_counter * 160;
