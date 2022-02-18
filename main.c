@@ -2,7 +2,6 @@
 @Authors 
 Gabriel Ferreira Teixeira
 Guilherme Henrique Zampronio
-
  */
 #include <stdio.h>
 #include <string.h>
@@ -17,7 +16,7 @@ Guilherme Henrique Zampronio
 typedef struct{
 	int register_index;
 	int insert_counter;
-    int search_counter;
+    	int search_counter;
 } Control;
 
 typedef struct{
@@ -29,20 +28,20 @@ typedef struct{
 } Register; 
 
 typedef struct{
-    char client_code[3]; 
+	char client_code[3]; 
 	char movie_code[3]; 
 	short offset_in_mainfile; 
 } Key;
 
 typedef struct{
-    char client_code[3];
+	char client_code[3];
 	char movie_code[3];
 } SearchStruct;
 
 typedef struct{ 
-    short keycount;
+	short keycount;
 	short child[MAXKEYS + 1]; 
-    Key key[MAXKEYS];  
+	Key key[MAXKEYS];  
 } Page;
 
 typedef struct{
@@ -79,16 +78,16 @@ void list_client(SearchStruct *search_indexes, Control *control);
 int get_number_of_children(Page *page);
 
 int main(){
-    Control *control = (Control *)malloc(sizeof(Control));
-    Register *registers = (Register*)malloc(sizeof(Register));
-    SearchStruct *search_indexes = (SearchStruct*)malloc(sizeof(SearchStruct)); 
-    int option;
-    int validate; 
+	Control *control = (Control *)malloc(sizeof(Control));
+	Register *registers = (Register*)malloc(sizeof(Register));
+	SearchStruct *search_indexes = (SearchStruct*)malloc(sizeof(SearchStruct)); 
+	int option;
+	int validate; 
 	short root_rnn;	
 	FILE* file;
 	Page* page =  (Page*)malloc(sizeof(Page));;
 	
-    while (option != 5){
+	while (option != 5){
 		printf("\n1. Insercao");
 		printf("\n2. Listar os dados de todos os clientes");
 		printf("\n3. Listar os dados de um cliente especifico");
@@ -120,46 +119,46 @@ int main(){
 				write_control_file(control);
 				break;
 			case 4:
-                load_files(&registers, &search_indexes, control);
+				load_files(&registers, &search_indexes, control);
 				break;
 			case 5:
-                break;
+				break;
 		}
 	}
-    free(registers);
-    free(search_indexes);
-    free(control);
-    return 0;
+	free(registers);
+	free(search_indexes);
+	free(control);
+	return 0;
 }
 
 short get_root(FILE *file){
-    short root_rrn;
-    fseek(file, 0, SEEK_SET);
-    fread(&root_rrn, sizeof(short), 1, file);
-    return root_rrn;
+	short root_rrn;
+	fseek(file, 0, SEEK_SET);
+	fread(&root_rrn, sizeof(short), 1, file);
+	return root_rrn;
 }
 
 int insert_register(Register *registers, Control *control){
-    short root_rrn;
+	short root_rrn;
 	short promo_rrn;
 	int promoted=0;
 	FILE* file;
 	Key promo_key;
 
-	Key keyAux;
-	stpcpy(keyAux.client_code,registers[control->register_index].client_code);
-	strcpy(keyAux.movie_code, registers[control->register_index].movie_code);
-	keyAux.offset_in_mainfile = control->insert_counter * 160;
-	
+	Key aux_key
+	stpcpy(aux_key.client_code,registers[control->register_index].client_code);
+	strcpy(aux_key.movie_code, registers[control->register_index].movie_code);
+	aux_key.offset_in_mainfile = control->insert_counter * 160;
+
 	if((file = fopen("arvoreb.bin", "rb+")) == NULL){ 
-		create_tree(keyAux);
+		create_tree(aux_key);
 		return 1;
-    }else{ 
-        root_rrn = get_root(file);
+	}else{ 
+		root_rrn = get_root(file);
 		if(promoted == -1){
 			return 0;
 		}
-        promoted = insert_key(root_rrn, keyAux, file, &promo_rrn, &promo_key); // provavelmente tem mais parametros
+		promoted = insert_key(root_rrn, aux_key, file, &promo_rrn, &promo_key); 
 		if(promoted == -1){
 			return 0;
 		}
@@ -169,7 +168,7 @@ int insert_register(Register *registers, Control *control){
 		fclose(file);
 		return 1;
 	} 
-	  
+
 }
 
 int insert_key(short rrn, Key key, FILE* file, short *promo_r_child, Key *promo_key){
@@ -181,11 +180,11 @@ int insert_key(short rrn, Key key, FILE* file, short *promo_r_child, Key *promo_
 	Key p_b_key;
 
 	
-    if(rrn == NIL){
+	if(rrn == NIL){
 		*promo_key = key;
 		*promo_r_child = NIL;
 		return 1;
-    }
+	}
 	read_page(rrn, &aux_page, file); 
 	encontrou = fetch_key_in_page(key, &aux_page, &pos);
 	if(encontrou == 1){
@@ -348,7 +347,7 @@ void insert_into_mainfile(Register *registers, Control *control){
 	}
 	fseek(mainfile, 0, SEEK_END);
 	fwrite(_register, sizeof(_register), 1, mainfile);
-    control->insert_counter++;
+    	control->insert_counter++;
 	fclose(mainfile);
 	
 }
