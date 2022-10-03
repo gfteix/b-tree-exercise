@@ -1,9 +1,6 @@
-# ED2_Exercicio8
+# Data Structure Exercise 
 
-O objetivo do exercício é gerenciar um sistema de streaming de filmes de uma dada empresa. O sistema
-armazena as seguintes informações: Código do Cliente (CodCli), Código do Filme (CodF), Nome do
-Cliente, Nome do Filme, e Gênero.
+The goal is to manage a movie stream system. This system recors the following informations> Client Code (CodCli), Film Code (CodF), client name, film name and movie gender.
 
-A principal funcionalidade do projeto é a utilização de um arquivo de índices primários estruturado como uma árvore-b.
+The project's main functionallity is the use of an indice file structured as a b-tree
 
-[Descrição completa](https://github.com/gfteix/ED2_Exercicio8/blob/main/Exercicio-AB-2021.pdf)
