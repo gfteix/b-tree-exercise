@@ -33,7 +33,7 @@ jobs:
       # Runs a set of commands using the runners shell
       - name: Run a multi-line script
         id: test2
-        if: steps.test.outcome == 'success' || steps.test.outcome == 'failure'
+        if: steps.test.outcome == 'failure'
         run: |
           echo Add other actions to build,
           echo test, and deploy your project.
